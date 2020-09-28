@@ -1,0 +1,59 @@
+---
+- name: Ansible template for an RTL-SDR Ship AIS tracking Raspberry Pi
+  hosts: shpi-ais
+  vars:
+    pi_name: ais
+  remote_user: pi
+  become: yes
+  become_method: sudo
+  roles:
+    - renamed-pi
+  #  - ssh-tunnel
+
+  pre_tasks:
+    - name: Update apt
+      apt: upgrade=dist update_cache=yes
+      become: true
+
+  tasks:
+  - name: Install rtl-sdr
+    apt: name=rtl-sdr state=present
+  - name: Install udev rules so that non-root users can access the dongle
+    get_url: url=https://git.osmocom.org/rtl-sdr/plain/rtl-sdr.rules dest=/etc/udev/rules.d/rtl-sdr.rules
+    notify: reboot
+  - name: Install git
+    apt: name=git state=present
+  - name: Install librtlsdr-dev
+    apt: name=librtlsdr-dev state=present
+  - name: Update the pkg prefix for librtlsdr (as it isn't configured properly by default)
+    lineinfile:
+      path: /usr/lib/arm-linux-gnueabihf/pkgconfig/librtlsdr.pc
+      regexp: '^prefix=$'
+      line: prefix=/usr
+  - name: Update the pkg exec_prefix for librtlsdr (as it isn't configured properly by default)
+    lineinfile:
+      path: /usr/lib/arm-linux-gnueabihf/pkgconfig/librtlsdr.pc
+      regexp: '^exec_prefix=$'
+      line: exec_prefix=${prefix}
+  - name: Update the pkg libdir for librtlsdr (as it isn't configured properly by default)
+    lineinfile:
+      path: /usr/lib/arm-linux-gnueabihf/pkgconfig/librtlsdr.pc
+      regexp: '^libdir=$'
+      line: libdir=${exec_prefix}/lib
+  - name: Update the pkg includedir for librtlsdr (as it isn't configured properly by default)
+    lineinfile:
+      path: /usr/lib/arm-linux-gnueabihf/pkgconfig/librtlsdr.pc
+      regexp: '^includedir=$'
+      line: includedir=${prefix}/include
+  - name: Install rtl_ais
+    git: repo=https://github.com/dgiardini/rtl-ais dest=/home/pi/rtl-ais
+    become: no
+  - name: Build rtl_ais
+    command: make
+    args:
+      chdir: /home/pi/rtl-ais
+    become: no
+
+  handlers:
+  - name: reboot
+    reboot:

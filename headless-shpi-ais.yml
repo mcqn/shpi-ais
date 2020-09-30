@@ -53,6 +53,8 @@
     args:
       chdir: /home/pi/rtl-ais
     become: no
+  - name: Install GnuAIS
+    apt: name=gnuais state=present
 
   handlers:
   - name: reboot

@@ -35,3 +35,19 @@ For basic output of any received AIS packets to stdout:
 cd ~/rtl-ais
 ./rtl_ais -n
 ```
+
+### GnuAIS
+
+`rtl_ais` will print out the raw AIS packets, but doesn't decode them.  GnuAIS will decode and output the information contained in them.  We can use a named pipe to tie the two together:
+
+```
+mkfifo aispipe
+./rtl_ais -A aispipe
+```
+In another terminal, hook `gnuais` up to the other end of the pipe
+```
+gnuais -l aispipe
+```
+If you're running on a full version of Raspbian with a GUI, you can install `gnuaisgui` (run `sudo apt install gnuaisgui`) and then run that, after getting `gnuais` running, and it will show the position of the ships on a map.
+
+[!Screenshot of gnuaisgui showing a collection on ships on the River Mersey in Liverpool](gnuguiais-screenshot.png)
